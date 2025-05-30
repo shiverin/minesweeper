@@ -100,6 +100,9 @@ class Sentence():
 
     def __str__(self):
         return f"{self.cells} = {self.count}"
+    
+    def __repr__(self):
+        return self.__str__()
 
     def known_mines(self):
         """
@@ -211,8 +214,6 @@ class MinesweeperAI():
                     else:
                         c.add(x)
         self.knowledge.append(Sentence(c,count))
-
-
         stop=True
         while stop:
             stop=False
@@ -221,17 +222,16 @@ class MinesweeperAI():
                 if a:
                     stop=True
                     self.mines.update(a)
-                    for am in a:
+                    for am in a.copy():
                         for kb in self.knowledge:
                             kb.mark_mine(am)
                 b=k.known_safes()
                 if b:
                     stop=True
                     self.safes.update(b)
-                    for bs in b:
+                    for bs in b.copy():
                         for kc in self.knowledge:
                             kc.mark_safe(bs)
-
             for i in self.knowledge:
                 for j in self.knowledge:
                     if i.cells.issubset(j.cells) and i!=j:
@@ -240,7 +240,9 @@ class MinesweeperAI():
                             if new not in self.knowledge:
                                 self.knowledge.append(new)
                                 stop=True
-            #potential cleanup code
+            # After all inference and knowledge updates in the while loop
+            self.knowledge = [sentence for sentence in self.knowledge if sentence.cells]
+        print(self.knowledge)
 
     def make_safe_move(self):
         """
@@ -251,9 +253,9 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        for n in self.safes:
-            if n not in self.moves_made:
-                return n
+        x=self.safes - self.moves_made
+        if x:
+            return (x).pop()
         return None
 
     def make_random_move(self):
