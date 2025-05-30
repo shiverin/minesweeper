@@ -194,12 +194,53 @@ class MinesweeperAI():
         self.moves_made.add(cell)
         self.mark_safe(cell)
         c=set()
-        for n in nearbymines:
-            c.add(n)
+        # Loop over all cells within one row and column
+        for i in range(cell[0] - 1, cell[0] + 2):
+            for j in range(cell[1] - 1, cell[1] + 2):
+                # Ignore the cell itself
+                if (i, j) == cell:
+                    continue
+                # Update count if cell in bounds and is mine
+                if 0 <= i < self.height and 0 <= j < self.width:
+                    x=(i,j)
+                    if x in self.safes:
+                        continue
+                    elif x in self.mines:
+                        count-=1
+                        continue
+                    else:
+                        c.add(x)
         self.knowledge.append(Sentence(c,count))
 
 
-        raise NotImplementedError
+        stop=True
+        while stop:
+            stop=False
+            for k in self.knowledge:
+                a=k.known_mines()
+                if a:
+                    stop=True
+                    self.mines.update(a)
+                    for am in a:
+                        for kb in self.knowledge:
+                            kb.mark_mine(am)
+                b=k.known_safes()
+                if b:
+                    stop=True
+                    self.safes.update(b)
+                    for bs in b:
+                        for kc in self.knowledge:
+                            kc.mark_safe(bs)
+
+            for i in self.knowledge:
+                for j in self.knowledge:
+                    if i.cells.issubset(j.cells) and i!=j:
+                        if j.cells-i.cells:
+                            new=Sentence(j.cells-i.cells,j.count-i.count)
+                            if new not in self.knowledge:
+                                self.knowledge.append(new)
+                                stop=True
+            #potential cleanup code
 
     def make_safe_move(self):
         """
